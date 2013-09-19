@@ -312,9 +312,26 @@ public class MasterFaultDetection extends AbstractComponent {
                                         notifyMasterFailure(masterToPing, "not master");
                                         return;
                                     } else if (exp.getCause() instanceof NodeDoesNotExistOnMasterException) {
-                                        logger.debug("[master] pinging a master {} but we do not exists on it, act as if its master failure", masterNode);
-                                        notifyMasterFailure(masterToPing, "do not exists on master, act as master failure");
-                                        return;
+                                        logger.info("[master] pinging a master {} but we do not exists on it, and we do not want election to take place", masterNode);
+                                        logger.info("Exiting as we are no longer present on master");
+                                        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+                                            
+                                            @Override
+                                            public void run() {
+                                                try {
+                                                    Thread.sleep(30000);
+                                                    System.err.println("Process not killed in 30s, halting");
+                                                    logger.info("Process not killed in 30s, halting");
+                                                    Runtime.getRuntime().halt(1);
+                                                } catch (InterruptedException e) {
+                                                    System.err.println("Process not killed in 30s, halting");
+                                                    Runtime.getRuntime().halt(1);
+                                                }
+                                                
+                                                
+                                            }
+                                        }));
+                                        System.exit(0);
                                     }
                                     int retryCount = ++MasterFaultDetection.this.retryCount;
                                     logger.trace("[master] failed to ping [{}], retry [{}] out of [{}]", exp, masterNode, retryCount, pingRetryCount);
